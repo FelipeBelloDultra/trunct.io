@@ -1,0 +1,15 @@
+services:
+    postgres_db:
+        image: postgres:17.0
+        ports:
+            - ${TRUNCT_DATABASE_PORT:-5432}:5432
+        environment:
+            - POSTGRES_USER=${TRUNCT_DATABASE_USER}
+            - POSTGRES_PASSWORD=${TRUNCT_DATABASE_PASSWORD}
+            - POSTGRES_DB=${TRUNCT_DATABASE_NAME}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+volumes:
+    postgres_data:
+        driver: local
