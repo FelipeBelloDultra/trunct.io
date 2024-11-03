@@ -9,6 +9,22 @@ services:
             - POSTGRES_DB=${TRUNCT_DATABASE_NAME}
         volumes:
             - postgres_data:/var/lib/postgresql/data
+        networks:
+            - trunct.io_net
+
+    pg_admin:
+        image: dpage/pgadmin4:2024-10-19-2
+        depends_on:
+            - postgres_db
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=docker@localhost.com
+            - PGADMIN_DEFAULT_PASSWORD=docker
+        ports:
+            - 8080:80
+        volumes:
+            - pgadmin_data:/var/lib/pgadmin
+        networks:
+            - trunct.io_net
 
     air_development:
         image: cosmtrek/air:v1.61.1
@@ -28,7 +44,15 @@ services:
                 "--build.bin",
                 "./bin/api",
             ]
+        networks:
+            - trunct.io_net
 
 volumes:
     postgres_data:
         driver: local
+    pgadmin_data:
+        driver: local
+
+networks:
+    trunct.io_net:
+        driver: bridge
