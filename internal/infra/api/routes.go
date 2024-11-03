@@ -20,12 +20,12 @@ func (api *API) BindRoutes() {
 				w.Write([]byte("pong"))
 			})
 
-			r.Route("/users", func(r chi.Router) {
-				r.Post("/", api.Controller.CreateUser)
-				r.Post("/session", api.Controller.AuthenticateUser)
+			r.Route("/accounts", func(r chi.Router) {
+				r.Post("/", api.Controller.CreateAccount)
+				r.Post("/session", api.Controller.AuthenticateAccount)
 				r.Group(func(r chi.Router) {
 					// TODO: Add authentication middleware
-					r.Get("/me", api.Controller.ShowAuthenticatedUser)
+					r.Get("/me", api.Controller.ShowAuthenticatedAccount)
 				})
 			})
 
