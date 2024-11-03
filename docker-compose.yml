@@ -47,6 +47,16 @@ services:
         networks:
             - trunct.io_net
 
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: development
+        volumes:
+            - ./:/src/trunctio
+        networks:
+            - trunct.io_net
+
 volumes:
     postgres_data:
         driver: local
