@@ -27,8 +27,10 @@ services:
             - trunct.io_net
 
     air_development:
-        image: cosmtrek/air:v1.61.1
-        working_dir: /app
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: development
         depends_on:
             - postgres_db
         ports:
@@ -36,9 +38,10 @@ services:
         environment:
             - LOAD_ENV_FILE=true
         volumes:
-            - ./:/app
+            - ./:/src/trunctio
         command:
             [
+                "air",
                 "--build.cmd",
                 "GOOS=linux CGO_ENABLED=0 GOARCH=amd64 GO111MODULE=on go build -buildvcs=false -o ./bin/api ./cmd/api",
                 "--build.bin",
