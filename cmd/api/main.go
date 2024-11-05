@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 
-	"github.com/FelipeBelloDultra/trunct.io/internal/infra/api"
-	"github.com/FelipeBelloDultra/trunct.io/internal/infra/api/controllers"
+	"github.com/FelipeBelloDultra/trunct.io/internal/api"
+	"github.com/FelipeBelloDultra/trunct.io/internal/api/controllers"
+	usecase "github.com/FelipeBelloDultra/trunct.io/internal/use-case"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -20,9 +23,30 @@ func main() {
 		}
 	}
 
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, fmt.Sprintf(
+		"user=%s password=%s host=%s port=%s dbname=%s",
+		os.Getenv("TRUNCT_DATABASE_USER"),
+		os.Getenv("TRUNCT_DATABASE_PASSWORD"),
+		os.Getenv("TRUNCT_DATABASE_HOST"),
+		os.Getenv("TRUNCT_DATABASE_PORT"),
+		os.Getenv("TRUNCT_DATABASE_NAME"),
+	))
+	if err != nil {
+		panic(err)
+	}
+
+	defer pool.Close()
+
+	if err := pool.Ping(ctx); err != nil {
+		panic(err)
+	}
+
 	api := api.API{
-		Router:     chi.NewMux(),
-		Controller: controllers.NewController(),
+		Router: chi.NewMux(),
+		Controller: controllers.Controller{
+			AccountUseCase: usecase.NewAccountUseCase(pool),
+		},
 	}
 	api.BindRoutes()
 
