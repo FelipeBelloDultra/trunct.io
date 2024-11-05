@@ -1,9 +1,11 @@
 package controllers
 
 import (
-	"encoding/json"
-	"log/slog"
+	"errors"
 	"net/http"
+
+	usecase "github.com/FelipeBelloDultra/trunct.io/internal/use-case"
+	httpvalidator "github.com/FelipeBelloDultra/trunct.io/internal/validator/http"
 )
 
 type CreateAccountSchema struct {
@@ -13,25 +15,46 @@ type CreateAccountSchema struct {
 }
 
 func (c Controller) CreateAccount(w http.ResponseWriter, r *http.Request) {
-	var schema CreateAccountSchema
-	if err := json.NewDecoder(r.Body).Decode(&schema); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid request body"))
-		return
-	}
+	var data httpvalidator.CreateUserReqValidator
+	validationErrors, err := c.decodeAndValidateJSON(r, &data)
 
-	id, err := c.AccountUseCase.CreateAccount(r.Context(), schema.Name, schema.Email, schema.Password)
 	if err != nil {
-		slog.Error("something went wrong", "error", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		if validationErrors != nil && errors.Is(err, ErrValidationFailed) {
+			c.handleError(w, http.StatusUnprocessableEntity, "validation failed", validationErrors)
+			return
+		}
+
+		if errors.Is(err, ErrFailedDecodeJSON) {
+			c.handleError(w, http.StatusBadRequest, "failed decoding JSON", nil)
+			return
+		}
+
+		c.internalServerError(w, "CreateAccount", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id": id.String(),
-	})
+	id, err := c.AccountUseCase.CreateAccount(r.Context(), data.Name, data.Email, data.Password)
+
+	if err != nil {
+		if errors.Is(err, usecase.ErrEmailAlreadyExists) {
+			c.handleError(w, http.StatusConflict, "email already exists", nil)
+			return
+		}
+
+		c.internalServerError(w, "CreateAccount", err)
+		return
+	}
+
+	c.encodeJSON(
+		w,
+		http.StatusCreated,
+		Response{
+			StatusCode: http.StatusCreated,
+			Data: map[string]any{
+				"id": id,
+			},
+		},
+	)
 }
 
 func (c Controller) AuthenticateAccount(w http.ResponseWriter, r *http.Request) {

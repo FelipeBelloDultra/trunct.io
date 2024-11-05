@@ -30,7 +30,12 @@ var (
 
 func (aus *AccountUseCase) CreateAccount(ctx context.Context, name, email, password string) (uuid.UUID, error) {
 	_, err := aus.queries.FindAccountByEmail(ctx, email)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+
+	if err != nil && err != pgx.ErrNoRows {
+		return uuid.UUID{}, err
+	}
+
+	if err == nil {
 		return uuid.UUID{}, ErrEmailAlreadyExists
 	}
 
