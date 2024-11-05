@@ -60,3 +60,28 @@ func (c *Controller) internalServerError(w http.ResponseWriter, controllerName s
 	slog.Error("[CONTROLLER_ERROR]", "controller", controllerName, "error", err.Error())
 	c.handleError(w, http.StatusInternalServerError, "internal server error", nil)
 }
+
+func (c *Controller) handleValidationError(w http.ResponseWriter, err error, controllerName string, validationErrors map[string][]string) {
+	if validationErrors != nil && errors.Is(err, ErrValidationFailed) {
+		c.handleError(w, http.StatusUnprocessableEntity, "validation failed", validationErrors)
+		return
+	}
+
+	if errors.Is(err, ErrFailedDecodeJSON) {
+		c.handleError(w, http.StatusBadRequest, "failed decoding JSON", nil)
+		return
+	}
+
+	c.internalServerError(w, controllerName, err)
+}
+
+func (c *Controller) sendJSONResponse(w http.ResponseWriter, statusCode int, data map[string]any) {
+	c.encodeJSON(
+		w,
+		statusCode,
+		Response{
+			StatusCode: statusCode,
+			Data:       data,
+		},
+	)
+}

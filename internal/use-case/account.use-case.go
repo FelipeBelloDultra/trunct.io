@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/FelipeBelloDultra/trunct.io/internal/jwt"
 	"github.com/FelipeBelloDultra/trunct.io/internal/pgstore"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -26,6 +27,7 @@ func NewAccountUseCase(pool *pgxpool.Pool) AccountUseCase {
 var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrPasswordHashing    = errors.New("something went wrong with password hashing")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 func (aus *AccountUseCase) CreateAccount(ctx context.Context, name, email, password string) (uuid.UUID, error) {
@@ -56,4 +58,26 @@ func (aus *AccountUseCase) CreateAccount(ctx context.Context, name, email, passw
 	}
 
 	return id, nil
+}
+
+func (aus *AccountUseCase) AuthenticateAccount(ctx context.Context, email, password string) (string, error) {
+	account, err := aus.queries.FindAccountByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrInvalidCredentials
+		}
+
+		return "", err
+	}
+
+	if err := bcrypt.CompareHashAndPassword(account.PasswordHash, []byte(password)); err != nil {
+		return "", ErrInvalidCredentials
+	}
+
+	token, err := jwt.CreateTokenFromID(account.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }

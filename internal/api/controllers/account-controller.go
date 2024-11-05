@@ -14,27 +14,21 @@ type CreateAccountSchema struct {
 	Password string `json:"password"`
 }
 
+type AuthenticateAccountSchema struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func (c Controller) CreateAccount(w http.ResponseWriter, r *http.Request) {
-	var data httpvalidator.CreateUserReqValidator
+	var data httpvalidator.CreateAccountReqValidator
 	validationErrors, err := c.decodeAndValidateJSON(r, &data)
 
 	if err != nil {
-		if validationErrors != nil && errors.Is(err, ErrValidationFailed) {
-			c.handleError(w, http.StatusUnprocessableEntity, "validation failed", validationErrors)
-			return
-		}
-
-		if errors.Is(err, ErrFailedDecodeJSON) {
-			c.handleError(w, http.StatusBadRequest, "failed decoding JSON", nil)
-			return
-		}
-
-		c.internalServerError(w, "CreateAccount", err)
+		c.handleValidationError(w, err, "CreateAccount", validationErrors)
 		return
 	}
 
 	id, err := c.AccountUseCase.CreateAccount(r.Context(), data.Name, data.Email, data.Password)
-
 	if err != nil {
 		if errors.Is(err, usecase.ErrEmailAlreadyExists) {
 			c.handleError(w, http.StatusConflict, "email already exists", nil)
@@ -45,21 +39,42 @@ func (c Controller) CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.encodeJSON(
+	c.sendJSONResponse(
 		w,
 		http.StatusCreated,
-		Response{
-			StatusCode: http.StatusCreated,
-			Data: map[string]any{
-				"id": id,
-			},
+		map[string]any{
+			"id": id,
 		},
 	)
 }
 
 func (c Controller) AuthenticateAccount(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
+	var data httpvalidator.AuthenticateAccountReqValidator
+	validationErrors, err := c.decodeAndValidateJSON(r, &data)
+
+	if err != nil {
+		c.handleValidationError(w, err, "AuthenticateAccount", validationErrors)
+		return
+	}
+
+	token, err := c.AccountUseCase.AuthenticateAccount(r.Context(), data.Email, data.Password)
+	if err != nil {
+		if errors.Is(err, usecase.ErrInvalidCredentials) {
+			c.handleError(w, http.StatusUnauthorized, "invalid credentials", nil)
+			return
+		}
+
+		c.internalServerError(w, "AuthenticateAccount", err)
+		return
+	}
+
+	c.sendJSONResponse(
+		w,
+		http.StatusOK,
+		map[string]any{
+			"token": token,
+		},
+	)
 }
 
 func (c Controller) ShowAuthenticatedAccount(w http.ResponseWriter, r *http.Request) {

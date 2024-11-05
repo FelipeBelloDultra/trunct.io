@@ -6,30 +6,14 @@ import (
 	"github.com/FelipeBelloDultra/trunct.io/internal/validator"
 )
 
-type CreateAccountReqValidator struct {
-	Name     string `json:"name"`
+type AuthenticateAccountReqValidator struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func (req CreateAccountReqValidator) Valid(context.Context) validator.Evaluator {
+func (req AuthenticateAccountReqValidator) Valid(context.Context) validator.Evaluator {
 	var eval validator.Evaluator
 
-	eval.CheckField(
-		validator.NotBlank(req.Name),
-		"name",
-		"name is required",
-	)
-	eval.CheckField(
-		validator.MinChars(req.Name, 4),
-		"name",
-		"name must have at least 4 characters",
-	)
-	eval.CheckField(
-		validator.MaxChars(req.Name, 100),
-		"name",
-		"name must have a maximum of 100 characters",
-	)
 	eval.CheckField(
 		validator.Matches(req.Email, validator.EmailRegex),
 		"email",
