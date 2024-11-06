@@ -30,14 +30,6 @@ func NewAccountUseCase(pool *pgxpool.Pool) AccountUseCase {
 	}
 }
 
-var (
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrPasswordHashing    = errors.New("something went wrong with password hashing")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrAccountInvalidID   = errors.New("invalid account id")
-	ErrAccountNotFound    = errors.New("account not found")
-)
-
 func (aus *AccountUseCase) CreateAccount(ctx context.Context, name, email, password string) (uuid.UUID, error) {
 	_, err := aus.queries.FindAccountByEmail(ctx, email)
 

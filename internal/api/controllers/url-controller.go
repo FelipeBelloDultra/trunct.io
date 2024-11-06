@@ -1,10 +1,46 @@
 package controllers
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+
+	usecase "github.com/FelipeBelloDultra/trunct.io/internal/use-case"
+	httpvalidator "github.com/FelipeBelloDultra/trunct.io/internal/validator/http"
+)
 
 func (c Controller) ShortenURL(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
+	var data httpvalidator.ShortenURLReqValidator
+	validationErrors, err := c.decodeAndValidateJSON(r, &data)
+
+	if err != nil {
+		c.handleValidationError(w, err, "ShortenURL", validationErrors)
+		return
+	}
+
+	accountID := r.Context().Value(AccountIDKey("accountID")).(string)
+	code, err := c.URLUseCase.ShortenURL(r.Context(), data.OriginalURL, accountID)
+	if err != nil {
+		if errors.Is(err, usecase.ErrFailedToGetURLCode) {
+			c.handleError(w, http.StatusBadRequest, "failed shortening URL", nil)
+			return
+		}
+
+		if errors.Is(err, usecase.ErrAccountInvalidID) {
+			c.handleError(w, http.StatusBadRequest, "invalid account ID", nil)
+			return
+		}
+
+		c.internalServerError(w, "ShortenURL", err)
+		return
+	}
+
+	c.sendJSONResponse(
+		w,
+		http.StatusCreated,
+		map[string]any{
+			"code": code,
+		},
+	)
 }
 
 func (c Controller) FetchURLs(w http.ResponseWriter, r *http.Request) {

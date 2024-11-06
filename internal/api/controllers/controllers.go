@@ -19,6 +19,7 @@ type Response struct {
 
 type Controller struct {
 	AccountUseCase usecase.AccountUseCase
+	URLUseCase     usecase.URLUseCase
 }
 
 type AccountIDKey string

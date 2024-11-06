@@ -46,6 +46,7 @@ func main() {
 		Router: chi.NewMux(),
 		Controller: controllers.Controller{
 			AccountUseCase: usecase.NewAccountUseCase(pool),
+			URLUseCase:     usecase.NewURLUseCase(pool),
 		},
 	}
 	api.BindRoutes()
