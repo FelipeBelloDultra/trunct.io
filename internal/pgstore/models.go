@@ -5,6 +5,8 @@
 package pgstore
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -13,4 +15,14 @@ type Account struct {
 	Name         string    `json:"name"`
 	Email        string    `json:"email"`
 	PasswordHash []byte    `json:"password_hash"`
+}
+
+type Url struct {
+	ID          uuid.UUID `json:"id"`
+	OwnerID     uuid.UUID `json:"owner_id"`
+	OriginalUrl string    `json:"original_url"`
+	Code        string    `json:"code"`
+	Clicks      int32     `json:"clicks"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
