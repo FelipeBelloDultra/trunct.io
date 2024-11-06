@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	usecase "github.com/FelipeBelloDultra/trunct.io/internal/use-case"
@@ -78,6 +79,8 @@ func (c Controller) AuthenticateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c Controller) ShowAuthenticatedAccount(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Context().Value(AccountIDKey("accountID")))
+
 	w.WriteHeader(http.StatusNotImplemented)
 	w.Write([]byte("method not implemented"))
 }

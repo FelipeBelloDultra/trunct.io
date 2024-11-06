@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"time"
 
@@ -10,15 +10,16 @@ import (
 )
 
 var (
-	jwtSecretKey   = []byte(os.Getenv("JWT_SECRET_KEY"))
-	expirationTime = time.Now().Add(time.Hour * 24).Unix()
+	jwtSecretKey    = []byte(os.Getenv("JWT_SECRET_KEY"))
+	expirationTime  = time.Now().Add(time.Hour * 24).Unix()
+	ErrInvalidToken = errors.New("invalid token")
 )
 
 func CreateTokenFromID(id uuid.UUID) (string, error) {
 	token := _jwt.NewWithClaims(
 		_jwt.SigningMethodHS256,
 		_jwt.MapClaims{
-			"id":  id.String(),
+			"sub": id.String(),
 			"exp": expirationTime,
 		},
 	)
@@ -30,18 +31,18 @@ func CreateTokenFromID(id uuid.UUID) (string, error) {
 	return tokenString, nil
 }
 
-func VerifyToken(tokenString string) error {
+func VerifyToken(tokenString string) (*_jwt.Token, error) {
 	token, err := _jwt.Parse(tokenString, func(token *_jwt.Token) (interface{}, error) {
 		return jwtSecretKey, nil
 	})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("invalid token")
+		return nil, ErrInvalidToken
 	}
 
-	return nil
+	return token, nil
 }

@@ -21,6 +21,8 @@ type Controller struct {
 	AccountUseCase usecase.AccountUseCase
 }
 
+type AccountIDKey string
+
 var (
 	ErrValidationFailed = errors.New("validation failed")
 	ErrFailedDecodeJSON = errors.New("failed decoding JSON")

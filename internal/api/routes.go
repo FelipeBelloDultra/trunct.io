@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/FelipeBelloDultra/trunct.io/internal/api/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -24,7 +25,7 @@ func (api *API) BindRoutes() {
 				r.Post("/", api.Controller.CreateAccount)
 				r.Post("/session", api.Controller.AuthenticateAccount)
 				r.Group(func(r chi.Router) {
-					// TODO: Add authentication middleware
+					r.Use(middlewares.EnsureAuthenticated)
 					r.Get("/me", api.Controller.ShowAuthenticatedAccount)
 				})
 			})
