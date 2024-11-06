@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+	"net/url"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -47,4 +48,10 @@ func MinChars(value string, min int) bool {
 
 func Matches(value string, regex *regexp.Regexp) bool {
 	return regex.MatchString(value)
+}
+
+func IsURL(value string) bool {
+	_, err := url.ParseRequestURI(value)
+
+	return err == nil
 }
