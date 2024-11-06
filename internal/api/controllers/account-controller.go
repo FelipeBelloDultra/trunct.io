@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	usecase "github.com/FelipeBelloDultra/trunct.io/internal/use-case"
@@ -79,8 +78,29 @@ func (c Controller) AuthenticateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c Controller) ShowAuthenticatedAccount(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Context().Value(AccountIDKey("accountID")))
+	accountID := r.Context().Value(AccountIDKey("accountID")).(string)
+	account, err := c.AccountUseCase.ShowAuthenticatedAccount(r.Context(), accountID)
 
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
+	if err != nil {
+		if errors.Is(err, usecase.ErrAccountNotFound) {
+			c.handleError(w, http.StatusNotFound, "account not found", nil)
+			return
+		}
+
+		if errors.Is(err, usecase.ErrAccountInvalidID) {
+			c.handleError(w, http.StatusBadRequest, "invalid account ID", nil)
+			return
+		}
+
+		c.internalServerError(w, "ShowAuthenticatedAccount", err)
+		return
+	}
+
+	c.sendJSONResponse(
+		w,
+		http.StatusOK,
+		map[string]any{
+			"account": account,
+		},
+	)
 }

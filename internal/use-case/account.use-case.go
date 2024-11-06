@@ -17,6 +17,12 @@ type AccountUseCase struct {
 	queries *pgstore.Queries
 }
 
+type AuthenticatedAccount struct {
+	ID    uuid.UUID `json:"id"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+}
+
 func NewAccountUseCase(pool *pgxpool.Pool) AccountUseCase {
 	return AccountUseCase{
 		pool:    pool,
@@ -28,6 +34,8 @@ var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrPasswordHashing    = errors.New("something went wrong with password hashing")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrAccountInvalidID   = errors.New("invalid account id")
+	ErrAccountNotFound    = errors.New("account not found")
 )
 
 func (aus *AccountUseCase) CreateAccount(ctx context.Context, name, email, password string) (uuid.UUID, error) {
@@ -80,4 +88,26 @@ func (aus *AccountUseCase) AuthenticateAccount(ctx context.Context, email, passw
 	}
 
 	return token, nil
+}
+
+func (aus *AccountUseCase) ShowAuthenticatedAccount(ctx context.Context, id string) (AuthenticatedAccount, error) {
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return AuthenticatedAccount{}, ErrAccountInvalidID
+	}
+
+	account, err := aus.queries.FindAccountByID(ctx, uuid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AuthenticatedAccount{}, ErrAccountNotFound
+		}
+
+		return AuthenticatedAccount{}, err
+	}
+
+	return AuthenticatedAccount{
+		ID:    account.ID,
+		Name:  account.Name,
+		Email: account.Email,
+	}, nil
 }

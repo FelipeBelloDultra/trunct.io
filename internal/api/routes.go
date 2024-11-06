@@ -31,7 +31,7 @@ func (api *API) BindRoutes() {
 			})
 
 			r.Group(func(r chi.Router) {
-				// TODO: Add authentication middleware
+				r.Use(middlewares.EnsureAuthenticated)
 				r.Route("/urls", func(r chi.Router) {
 					r.Post("/shorten", api.Controller.ShortenURL)
 					r.Get("/", api.Controller.FetchURLs)
