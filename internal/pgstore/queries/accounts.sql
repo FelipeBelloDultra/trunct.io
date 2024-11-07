@@ -12,4 +12,3 @@ WHERE email = $1;
 SELECT id, name, email, password_hash
 FROM accounts
 WHERE id = $1;
-

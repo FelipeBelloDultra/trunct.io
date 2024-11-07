@@ -31,13 +31,13 @@ func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (uuid.UUID
 	return id, err
 }
 
-const findByCode = `-- name: FindByCode :one
+const findURLByCode = `-- name: FindURLByCode :one
 SELECT id, code, owner_id, original_url, clicks, created_at, updated_at
 FROM urls
 WHERE code = $1
 `
 
-type FindByCodeRow struct {
+type FindURLByCodeRow struct {
 	ID          uuid.UUID `json:"id"`
 	Code        string    `json:"code"`
 	OwnerID     uuid.UUID `json:"owner_id"`
@@ -47,9 +47,47 @@ type FindByCodeRow struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func (q *Queries) FindByCode(ctx context.Context, code string) (FindByCodeRow, error) {
-	row := q.db.QueryRow(ctx, findByCode, code)
-	var i FindByCodeRow
+func (q *Queries) FindURLByCode(ctx context.Context, code string) (FindURLByCodeRow, error) {
+	row := q.db.QueryRow(ctx, findURLByCode, code)
+	var i FindURLByCodeRow
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.OwnerID,
+		&i.OriginalUrl,
+		&i.Clicks,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateURL = `-- name: UpdateURL :one
+UPDATE urls
+SET original_url = $2, clicks = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING id, code, owner_id, original_url, clicks, created_at, updated_at
+`
+
+type UpdateURLParams struct {
+	ID          uuid.UUID `json:"id"`
+	OriginalUrl string    `json:"original_url"`
+	Clicks      int32     `json:"clicks"`
+}
+
+type UpdateURLRow struct {
+	ID          uuid.UUID `json:"id"`
+	Code        string    `json:"code"`
+	OwnerID     uuid.UUID `json:"owner_id"`
+	OriginalUrl string    `json:"original_url"`
+	Clicks      int32     `json:"clicks"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UpdateURL(ctx context.Context, arg UpdateURLParams) (UpdateURLRow, error) {
+	row := q.db.QueryRow(ctx, updateURL, arg.ID, arg.OriginalUrl, arg.Clicks)
+	var i UpdateURLRow
 	err := row.Scan(
 		&i.ID,
 		&i.Code,
