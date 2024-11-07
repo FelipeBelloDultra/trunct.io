@@ -9,4 +9,5 @@ var (
 	ErrAccountInvalidID   = errors.New("invalid account id")
 	ErrAccountNotFound    = errors.New("account not found")
 	ErrFailedToGetURLCode = errors.New("failed to get URL code")
+	ErrURLNotFound        = errors.New("url not found")
 )

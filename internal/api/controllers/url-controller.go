@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	usecase "github.com/FelipeBelloDultra/trunct.io/internal/use-case"
 	httpvalidator "github.com/FelipeBelloDultra/trunct.io/internal/validator/http"
 )
@@ -59,6 +61,22 @@ func (c Controller) ShowURLStatsById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c Controller) RedirectToURLByCode(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
+	code := chi.URLParam(r, "url_code")
+	if code == "" {
+		c.handleError(w, http.StatusBadRequest, "missing URL code", nil)
+		return
+	}
+
+	url, err := c.URLUseCase.RedirectToURLByCode(r.Context(), code)
+	if err != nil {
+		if errors.Is(err, usecase.ErrURLNotFound) {
+			c.handleError(w, http.StatusNotFound, "URL not found", nil)
+			return
+		}
+
+		c.internalServerError(w, "RedirectToURLByCode", err)
+		return
+	}
+
+	http.Redirect(w, r, url, http.StatusFound)
 }

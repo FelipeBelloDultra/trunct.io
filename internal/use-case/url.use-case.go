@@ -45,7 +45,7 @@ func (uuc *URLUseCase) ShortenURL(ctx context.Context, originalURL, ownerID stri
 		code = uuc.genCode()
 		currentTry := i + 1
 
-		_, err := uuc.queries.FindByCode(ctx, code)
+		_, err := uuc.queries.FindURLByCode(ctx, code)
 		if err == pgx.ErrNoRows {
 			break
 		}
@@ -72,4 +72,30 @@ func (uuc *URLUseCase) ShortenURL(ctx context.Context, originalURL, ownerID stri
 	}
 
 	return code, nil
+}
+
+func (uuc *URLUseCase) RedirectToURLByCode(ctx context.Context, code string) (string, error) {
+	url, err := uuc.queries.FindURLByCode(ctx, code)
+	if err == pgx.ErrNoRows {
+		return "", ErrURLNotFound
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	url.Clicks++
+	_, err = uuc.queries.UpdateURL(
+		ctx,
+		pgstore.UpdateURLParams{
+			ID:          url.ID,
+			Clicks:      url.Clicks,
+			OriginalUrl: url.OriginalUrl,
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return url.OriginalUrl, nil
 }
