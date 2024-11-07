@@ -42,8 +42,6 @@ func (api *API) BindRoutes() {
 				r.Route("/urls", func(r chi.Router) {
 					r.Post("/shorten", api.Controller.ShortenURL)
 					r.Get("/", api.Controller.FetchURLs)
-					r.Get("/{id}", api.Controller.ShowURLById)
-					r.Get("/{id}/stats", api.Controller.ShowURLStatsById)
 				})
 			})
 		})
