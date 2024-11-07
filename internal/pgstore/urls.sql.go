@@ -12,6 +12,19 @@ import (
 	"github.com/google/uuid"
 )
 
+const countURLsByAccountID = `-- name: CountURLsByAccountID :one
+SELECT COUNT(*) AS count
+FROM urls
+WHERE owner_id = $1
+`
+
+func (q *Queries) CountURLsByAccountID(ctx context.Context, ownerID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countURLsByAccountID, ownerID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createURL = `-- name: CreateURL :one
 INSERT INTO urls (original_url, code, owner_id)
 VALUES ($1, $2, $3)
@@ -29,6 +42,58 @@ func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (uuid.UUID
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const fetchURLsByAccountID = `-- name: FetchURLsByAccountID :many
+SELECT id, code, owner_id, original_url, clicks, created_at, updated_at
+FROM urls
+WHERE owner_id = $1
+ORDER BY created_at desc
+LIMIT $2 OFFSET $3
+`
+
+type FetchURLsByAccountIDParams struct {
+	OwnerID uuid.UUID `json:"owner_id"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+type FetchURLsByAccountIDRow struct {
+	ID          uuid.UUID `json:"id"`
+	Code        string    `json:"code"`
+	OwnerID     uuid.UUID `json:"owner_id"`
+	OriginalUrl string    `json:"original_url"`
+	Clicks      int32     `json:"clicks"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (q *Queries) FetchURLsByAccountID(ctx context.Context, arg FetchURLsByAccountIDParams) ([]FetchURLsByAccountIDRow, error) {
+	rows, err := q.db.Query(ctx, fetchURLsByAccountID, arg.OwnerID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchURLsByAccountIDRow
+	for rows.Next() {
+		var i FetchURLsByAccountIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.OwnerID,
+			&i.OriginalUrl,
+			&i.Clicks,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const findURLByCode = `-- name: FindURLByCode :one
