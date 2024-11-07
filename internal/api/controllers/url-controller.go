@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -46,18 +47,63 @@ func (c Controller) ShortenURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c Controller) FetchURLs(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
-}
+	page := int32(1)
+	limit := int32(10)
 
-func (c Controller) ShowURLById(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
-}
+	if p := r.URL.Query().Get("page"); p != "" {
+		if val, err := strconv.Atoi(p); err == nil {
+			page = int32(val)
 
-func (c Controller) ShowURLStatsById(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("method not implemented"))
+			if page <= 0 {
+				c.handleError(w, http.StatusBadRequest, "page must be a positive integer", nil)
+				return
+			}
+		}
+	}
+
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if val, err := strconv.Atoi(l); err == nil {
+			limit = int32(val)
+
+			if limit <= 0 {
+				c.handleError(w, http.StatusBadRequest, "limit must be a positive integer", nil)
+				return
+			}
+		}
+	}
+
+	accountID := r.Context().Value(AccountIDKey("accountID")).(string)
+	offset := (page - 1) * limit
+	urls, totalURL, err := c.URLUseCase.FetchURLs(r.Context(), accountID, limit, offset)
+	if err != nil {
+		c.internalServerError(w, "FetchURLs", err)
+		return
+	}
+
+	totalPages := (totalURL + int64(limit) - 1) / int64(limit)
+	var nextPage, prevPage int32
+	if int64(page) < totalPages {
+		nextPage = []int32{page + 1}[0]
+	}
+	if page > 1 {
+		prevPage = []int32{page - 1}[0]
+	}
+
+	c.sendJSONResponse(
+		w,
+		http.StatusOK,
+		map[string]any{
+			"items": urls,
+			"pagination": PaginationResponse{
+				TotalCount:   int(totalURL),
+				Limit:        int(limit),
+				CurrentPage:  int(page),
+				TotalPages:   int(totalPages),
+				NextPage:     int(nextPage),
+				PreviousPage: int(prevPage),
+			},
+		},
+	)
 }
 
 func (c Controller) RedirectToURLByCode(w http.ResponseWriter, r *http.Request) {

@@ -99,3 +99,29 @@ func (uuc *URLUseCase) RedirectToURLByCode(ctx context.Context, code string) (st
 
 	return url.OriginalUrl, nil
 }
+
+func (uuc *URLUseCase) FetchURLs(ctx context.Context, accountID string, limit, offset int32) ([]pgstore.FetchURLsByAccountIDRow, int64, error) {
+	id, err := uuid.Parse(accountID)
+	if err != nil {
+		return nil, 0, ErrAccountInvalidID
+	}
+
+	rows, err := uuc.queries.FetchURLsByAccountID(
+		ctx,
+		pgstore.FetchURLsByAccountIDParams{
+			OwnerID: id,
+			Limit:   limit,
+			Offset:  offset,
+		},
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount, err := uuc.queries.CountURLsByAccountID(ctx, id)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return rows, totalCount, nil
+}

@@ -17,6 +17,15 @@ type Response struct {
 	Details    map[string][]string `json:"details,omitempty"`
 }
 
+type PaginationResponse struct {
+	TotalCount   int `json:"total_count"`
+	Limit        int `json:"limit"`
+	CurrentPage  int `json:"current_page"`
+	TotalPages   int `json:"total_pages"`
+	NextPage     int `json:"next_page,omitempty"`
+	PreviousPage int `json:"previous_page,omitempty"`
+}
+
 type Controller struct {
 	AccountUseCase usecase.AccountUseCase
 	URLUseCase     usecase.URLUseCase
