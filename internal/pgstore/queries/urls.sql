@@ -21,7 +21,6 @@ WHERE owner_id = $1
 ORDER BY created_at desc
 LIMIT $2 OFFSET $3;
 
-
 -- name: CountURLsByAccountID :one
 SELECT COUNT(*) AS count
 FROM urls

@@ -20,7 +20,7 @@ func (api *API) BindRoutes() {
 	api.Router.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
 			r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte("pong"))
+				w.Write([]byte("ponggggg"))
 			})
 
 			r.Route("/accounts", func(r chi.Router) {

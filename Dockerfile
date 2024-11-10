@@ -1,15 +1,12 @@
 # Builder
-FROM golang:1.23.2-alpine AS builder
-RUN apk update
-WORKDIR /src/trunctio
-ENV GOOS=linux \
-    CGO_ENABLED=0 \
-    GOARCH=amd64 \
-    GO111MODULE=on
+FROM golang:1.23.2 AS builder
+RUN apt-get update
+WORKDIR /go/src
+ENV PATH="/go/bin:${PATH}"
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o ./bin/trunctio ./cmd/api
+RUN GOOS=linux go build -ldflags="-s -w" -o ./bin/trunctio ./cmd/api
 
 # Development
 FROM builder AS development
@@ -24,6 +21,6 @@ RUN apk --no-cache add ca-certificates && \
     adduser -D -u 1001 produser
 USER produser
 WORKDIR /app
-COPY --from=builder /src/trunctio/bin/trunctio /app/
+COPY --from=builder /go/src/bin/trunctio /app/
 EXPOSE 3333
 CMD [ "/app/trunctio" ]

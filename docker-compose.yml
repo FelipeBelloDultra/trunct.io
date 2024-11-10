@@ -38,12 +38,12 @@ services:
         environment:
             - LOAD_ENV_FILE=true
         volumes:
-            - ./:/src/trunctio
+            - ./:/go/src
         command:
             [
                 "air",
                 "--build.cmd",
-                "GOOS=linux CGO_ENABLED=0 GOARCH=amd64 GO111MODULE=on go build -buildvcs=false -o ./bin/api ./cmd/api",
+                "GOOS=linux go build -buildvcs=false -o ./bin/api ./cmd/api",
                 "--build.bin",
                 "./bin/api",
             ]
@@ -56,7 +56,7 @@ services:
             dockerfile: Dockerfile
             target: development
         volumes:
-            - ./:/src/trunctio
+            - ./:/go/src
         networks:
             - trunct.io_net
         depends_on:
